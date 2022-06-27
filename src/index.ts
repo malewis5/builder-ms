@@ -1,5 +1,6 @@
 import express from 'express';
 import Shopify, { ApiVersion, AuthQuery } from '@shopify/shopify-api';
+import * as BuildController from './controllers/buildController';
 require('dotenv').config();
 
 const app = express();
@@ -19,8 +20,6 @@ Shopify.Context.initialize({
 // persist this object in your app.
 const ACTIVE_SHOPIFY_SHOPS: { [key: string]: string | undefined } = {};
 
-// the rest of the example code goes here
-
 app.get('/', async (req, res) => {
   // This shop hasn't been seen yet, go through OAuth to create a session
   if (ACTIVE_SHOPIFY_SHOPS[SHOP] === undefined) {
@@ -28,7 +27,6 @@ app.get('/', async (req, res) => {
     res.redirect(`/login`);
   } else {
     res.send('Hello world!');
-    // Load your app skeleton page with App Bridge, and do something amazing!
     res.end();
   }
 });
@@ -57,6 +55,8 @@ app.get('/auth/callback', async (req, res) => {
   }
   return res.redirect(`/?host=${req.query.host}&shop=${req.query.shop}`); // wherever you want your user to end up after OAuth completes
 });
+
+app.get('/test', BuildController.buildBundle);
 
 app.listen(3000, () => {
   console.log('your app is now listening on port 3000');
