@@ -1,14 +1,13 @@
 import path from 'path';
-import * as json from '../page.json';
 //@ts-ignore
 import loadConfigFile from 'rollup/loadConfigFile';
 import { rollup } from 'rollup';
 import { Shopify } from '@shopify/shopify-api';
 import { Page } from '@shopify/shopify-api/dist/rest-resources/2022-04/page.js';
-import { writeFile } from 'fs/promises';
+import { writeFile, readFile } from 'fs/promises';
 import { updateBundleRefs } from '../utils/bundleUtils';
 
-async function build() {
+export async function build() {
   console.log('Building bundle');
   const filePath = path.resolve(__dirname, '../../rollup.config.js');
   try {
@@ -32,12 +31,20 @@ async function build() {
 
 export const buildBundle = async (req: any, res: any) => {
   try {
-    await writeFile(path.resolve('./', 'src/page.json'), JSON.stringify(json));
+    await writeFile(
+      path.resolve('./', 'src/page.json'),
+      JSON.stringify(req.body.pageData)
+    );
     await build();
     await updateBundleRefs();
-    res.status(201).send('Done with bundle');
+    const html = await readFile(
+      path.resolve(__dirname, '../../build/build.html'),
+      'utf-8'
+    );
+    res.status(201).send('Page saved to Shopify');
   } catch (e) {
-    res.status(500).send('Error creating bundle');
+    console.log(e);
+    res.status(500).send(e.message);
   }
 };
 
@@ -45,15 +52,16 @@ export const sendBuild = async (req: any, res: any) => {
   try {
     const session = await Shopify.Utils.loadCurrentSession(req, res);
     if (session) {
+      console.log(session);
       const page = new Page({ session: session });
-      page.title = req.body.title;
-      // page.body_html = bodyHtml;
-      page.template_suffix = req.body.template_suffix;
+      page.title = 'test';
+      page.body_html = req.body.html;
+      page.template_suffix = 'shogun.landing';
       await page.save({});
-      res.status(201).send('Page created successfully');
-    }
+      return;
+    } else return 'Error creating shopify session';
   } catch (e) {
     console.error(e);
-    res.status(500).send('Error creating page.');
+    return 'Error creating page.';
   }
 };

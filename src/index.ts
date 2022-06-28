@@ -1,9 +1,12 @@
 import express from 'express';
 import Shopify, { ApiVersion, AuthQuery } from '@shopify/shopify-api';
 import * as BuildController from './controllers/buildController';
+import cors from 'cors';
 require('dotenv').config();
 
 const app = express();
+app.use(cors());
+app.use(express.json());
 
 const { API_KEY, API_SECRET_KEY, SCOPES, SHOP, HOST } = process.env;
 
@@ -56,7 +59,8 @@ app.get('/auth/callback', async (req, res) => {
   return res.redirect(`/?host=${req.query.host}&shop=${req.query.shop}`); // wherever you want your user to end up after OAuth completes
 });
 
-app.get('/test', BuildController.buildBundle);
+app.post('/build', BuildController.buildBundle);
+app.post('/sendBuild', BuildController.sendBuild);
 
 app.listen(3000, () => {
   console.log('your app is now listening on port 3000');
